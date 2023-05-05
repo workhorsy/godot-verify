@@ -5,6 +5,7 @@
 # It uses the MIT License
 # It is hosted at: https://github.com/workhorsy/godot-verify
 
+import os
 from enum import Enum
 from gdtoolkit.parser import parser
 from gdtoolkit.linter.ast import AbstractSyntaxTree
@@ -30,6 +31,22 @@ def after(value, separator):
 def between(value, front, back):
 	retval = after(value, front)
 	retval = before(retval, back)
+	return retval
+
+def parseAllSectionKeyValues(section):
+	import re
+
+	retval = {}
+	heading = None
+	for line in section.splitlines():
+		if re.match(r"^\[\w+\]$", line):
+			heading = line
+		elif heading and "=" in line:
+			for key, value in parseKeyValues(line).items():
+				if not heading in retval:
+					retval[heading] = {}
+				retval[heading][key] = value
+
 	return retval
 
 def parseKeyValues(line):
@@ -237,11 +254,26 @@ def readFileSections(file_name):
 class ProjectFile(object):
 	def __init__(self, file_name):
 		self._path = file_name
+		self._main_scene_path = None
+		self._error = None
+
+		# Read the project.godot file to find the main .tscn
+		if not os.path.exists(file_name):
+			self._error = "Failed to find {0} file ...".format(file_name)
+			return
+
+		for section in readFileSections(file_name):
+			data = parseAllSectionKeyValues(section)
+			# [application]
+			# run/main_scene="res://src/Level/Level.tscn"
+			heading = data.get("[application]", None)
+			if heading:
+				entry = heading.get("run/main_scene", None)
+				if entry:
+					self._main_scene_path = after(entry, 'res://')
 
 class SceneFile(object):
 	def __init__(self, file_name):
-		import os
-
 		self._path = file_name
 		self._error = None
 		self._nodes = []

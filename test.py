@@ -116,5 +116,25 @@ class TestHeadingSceneFile(unittest.TestCase):
 		self.assertEqual(len(scene._resources), 0)
 
 
+class TestProjectFile(unittest.TestCase):
+	def setUp(self):
+		setPath("test_projects/project_normal/project/")
+
+	def tearDown(self):
+		resetPath()
+
+	def test_should_parse_project(self):
+		project = ProjectFile("project.godot")
+		self.assertEqual(project._path, "project.godot")
+		self.assertEqual(project._main_scene_path, "Level/Level.tscn")
+		self.assertIsNone(project._error)
+
+	def test_should_fail_to_parse_invalid_project(self):
+		project = ProjectFile("XXX.godot")
+		self.assertEqual(project._path, "XXX.godot")
+		self.assertIsNone(project._main_scene_path)
+		self.assertIsNotNone(project._error)
+		self.assertEqual(project._error, "Failed to find XXX.godot file ...")
+
 if __name__ == '__main__':
 	unittest.main()
