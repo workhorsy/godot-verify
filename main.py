@@ -42,13 +42,13 @@ if __name__ == '__main__':
 				raise Exception('Unexpected file type: "{0}"'.format(entry))
 	'''
 	for project in projects:
-		print(project._file_name)
+		print(project._path)
 	'''
 	for scene in scenes:
-		print(scene._file_name)
+		print(scene._path)
 	'''
 	for script in scripts:
-		print(script._file_name)
+		print(script._path)
 		for c in script._classes:
 			print("    {0}".format(c))
 		for f in script._functions:

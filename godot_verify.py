@@ -121,7 +121,9 @@ class HeadingNode(object):
 							pass
 
 	def isValid(self):
-		return self._name and self._type
+		return \
+		self._name != None and \
+		self._type != None
 
 class HeadingConnection(object):
 	def __init__(self, section):
@@ -150,7 +152,11 @@ class HeadingConnection(object):
 							pass
 
 	def isValid(self):
-		return self._signal and self._from and self._to and self._method
+		return \
+		self._signal != None and \
+		self._from != None and \
+		self._to != None and \
+		self._method != None
 
 
 
@@ -180,7 +186,9 @@ class HeadingExtResource(object):
 							pass
 
 	def isValid(self):
-		return self._path and self._type
+		return \
+		self._path != None and \
+		self._type != None
 
 
 
@@ -228,14 +236,22 @@ def readFileSections(file_name):
 
 class ProjectFile(object):
 	def __init__(self, file_name):
-		self._file_name = file_name
+		self._path = file_name
 
 class SceneFile(object):
 	def __init__(self, file_name):
-		self._file_name = file_name
+		import os
+
+		self._path = file_name
+		self._error = None
 		self._nodes = []
 		self._resources = []
 		self._connections = []
+
+		if not os.path.exists(file_name):
+			self._error = "Failed to find {0} file ...".format(file_name)
+			return
+
 
 		for section in readFileSections(file_name):
 			#xxx = getSectionType(section)
@@ -262,7 +278,7 @@ class SceneFile(object):
 
 class GDScriptFile(object):
 	def __init__(self, file_name):
-		self._file_name = file_name
+		self._path = file_name
 		self._classes = []
 		self._functions = []
 

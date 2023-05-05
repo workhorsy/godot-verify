@@ -8,6 +8,20 @@
 import unittest
 from godot_verify import *
 
+_root_path = ""
+def setPath(project_path):
+	import os
+	global _root_path
+	if not _root_path:
+		_root_path = os.getcwd()
+
+	os.chdir(os.path.join(_root_path, project_path))
+
+def resetPath():
+	import os
+	global _root_path
+	os.chdir(_root_path)
+
 class TestParseKeyValues(unittest.TestCase):
 	def test_call(self):
 		data = '[ext_resource path="res://aaa/bbb.thing965/blah.jpg" singleton = false dot.67.name="res://game.dll" type="Texture" total=8.45 has_space="Bob Smith" is_empty="" id=1]'
@@ -58,6 +72,49 @@ class TestHeadingExtResource(unittest.TestCase):
 		self.assertEqual(resource._path, "src/ClothHolder/ClothHolder.tscn")
 		self.assertEqual(resource._type, "PackedScene")
 		self.assertEqual(resource._id, 21)
+
+class TestHeadingSceneFile(unittest.TestCase):
+	def setUp(self):
+		setPath("test_projects/project_normal/project/")
+
+	def tearDown(self):
+		resetPath()
+
+	def test_should_parse_scene_with_child_scene(self):
+		scene = SceneFile("Level/Level.tscn")
+		self.assertEqual(scene._path, "Level/Level.tscn")
+		self.assertIsNone(scene._error)
+		self.assertEqual(len(scene._resources), 2)
+
+		self.assertEqual(scene._resources[0]._type, "PackedScene")
+		self.assertEqual(scene._resources[0]._path, "Player/Player.tscn")
+		self.assertEqual(scene._resources[0].isValid(), True)
+
+		self.assertEqual(scene._resources[1]._type, "PackedScene")
+		self.assertEqual(scene._resources[1]._path, "Box2/Box2.tscn")
+		self.assertEqual(scene._resources[1].isValid(), True)
+
+	def test_should_parse_scene_with_child_resources(self):
+		scene = SceneFile("Player/Player.tscn")
+		self.assertEqual(scene._path, "Player/Player.tscn")
+		self.assertIsNone(scene._error)
+		self.assertEqual(len(scene._resources), 2)
+
+		self.assertEqual(scene._resources[0]._type, "Texture")
+		self.assertEqual(scene._resources[0]._path, "icon.png")
+		self.assertEqual(scene._resources[0].isValid(), True)
+
+		self.assertEqual(scene._resources[1]._type, "Script")
+		self.assertEqual(scene._resources[1]._path, "Player/Player.gdns")
+		self.assertEqual(scene._resources[1].isValid(), True)
+
+	def test_should_fail_to_parse_invalid_scene(self):
+		scene = SceneFile("Level/XXX.tscn")
+		self.assertEqual(scene._path, "Level/XXX.tscn")
+		self.assertIsNotNone(scene._error)
+		self.assertEqual(scene._error, "Failed to find Level/XXX.tscn file ...")
+		self.assertEqual(len(scene._resources), 0)
+
 
 if __name__ == '__main__':
 	unittest.main()
