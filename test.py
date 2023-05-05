@@ -105,7 +105,7 @@ class TestHeadingSceneFile(unittest.TestCase):
 		self.assertEqual(scene._resources[0].isValid(), True)
 
 		self.assertEqual(scene._resources[1]._type, "Script")
-		self.assertEqual(scene._resources[1]._path, "Player/Player.gdns")
+		self.assertEqual(scene._resources[1]._path, "Player/Player.gd")
 		self.assertEqual(scene._resources[1].isValid(), True)
 
 	def test_should_fail_to_parse_invalid_scene(self):
