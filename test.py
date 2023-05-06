@@ -6,7 +6,7 @@
 # It is hosted at: https://github.com/workhorsy/godot-verify
 
 import unittest
-from godot_verify import *
+from godot_project_files import *
 
 _root_path = ""
 def setPath(project_path):

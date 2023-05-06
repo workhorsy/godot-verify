@@ -5,7 +5,7 @@
 # It uses the MIT License
 # It is hosted at: https://github.com/workhorsy/godot-verify
 
-from godot_verify import *
+from godot_project_files import *
 
 if __name__ == '__main__':
 	import os
