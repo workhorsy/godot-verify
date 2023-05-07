@@ -1,5 +1,5 @@
 extends Spatial
-
+class_name PlayerZZ
 
 
 func _ready() -> void:

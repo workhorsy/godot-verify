@@ -136,5 +136,23 @@ class TestProjectFile(unittest.TestCase):
 		self.assertIsNotNone(project._error)
 		self.assertEqual(project._error, "Failed to find XXX.godot file ...")
 
+class TestGDScriptFile(unittest.TestCase):
+	def setUp(self):
+		setPath("test_projects/project_normal/project/")
+
+	def tearDown(self):
+		resetPath()
+
+	def test_default(self):
+		gdscript = GDScriptFile("Player/Player.gd", lambda x: x)
+		#import json
+		#print("!!!!!!!", json.dumps(gdscript.__dict__))
+		#print(gdscript._classes)
+		#print(gdscript._functions)
+
+		self.assertEqual(gdscript._path, "Player/Player.gd")
+		self.assertEqual(gdscript._classes, ["FIXME"])
+		self.assertEqual(gdscript._functions, ["FIXME"])
+
 if __name__ == '__main__':
 	unittest.main()

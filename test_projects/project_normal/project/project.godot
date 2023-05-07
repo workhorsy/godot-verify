@@ -8,6 +8,16 @@
 
 config_version=4
 
+_global_script_classes=[ {
+"base": "Spatial",
+"class": "PlayerZZ",
+"language": "GDScript",
+"path": "res://Player/Player.gd"
+} ]
+_global_script_class_icons={
+"PlayerZZ": ""
+}
+
 [application]
 
 config/name="Project Normal"
