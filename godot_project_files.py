@@ -70,27 +70,29 @@ class SceneFile(object):
 						self._resources.append(resource)
 
 
-def walk_tree_depth_first(node, level):
+def walk_tree_depth_first(node, level = 0):
 	from lark import Tree
 
 	is_end = len(node.children) == 1 and not isinstance(node.children[0], Tree)
-	yield {'level' : level, 'data' : node.data, 'is_meta' : False, 'is_end' : not is_end}
+	yield {'level' : level, 'node' : node, 'is_meta' : False, 'is_end' : not is_end}
 
 	is_end = len(node.children) == 1 and not isinstance(node.children[0], Tree)
 	if is_end:
-		yield {'level' : 0, 'data' : node.children[0], 'is_meta' : True, 'is_end' : is_end}
+		yield {'level' : 0, 'node' : node.children[0], 'is_meta' : True, 'is_end' : is_end}
 		return
 
-	for n in node.children:
-		if isinstance(n, Tree):
-			yield from walk_tree_depth_first(n, level+1)
+	for child in node.children:
+		if isinstance(child, Tree):
+			yield from walk_tree_depth_first(child, level+1)
 		else:
 			is_end = True
-			yield {'level' : (level+1), 'data' : n, 'is_meta' : False, 'is_end' : is_end}
+			yield {'level' : (level+1), 'node' : child, 'is_meta' : False, 'is_end' : is_end}
 
 class GDScriptFile(object):
 	def __init__(self, file_name, leaf_visitor_cb):
 		import sys
+		from lark import Tree
+		from lark.lexer import Token
 
 		self._path = file_name
 		self._classes = []
@@ -103,12 +105,20 @@ class GDScriptFile(object):
 		parse_tree = parser.parse(code, gather_metadata=True)
 		#print(parse_tree.pretty())
 
-		for node in walk_tree_depth_first(parse_tree, 0):
-			end = "\n" if node["is_end"] else ""
-			start = "\t" if node["is_meta"] else ""
-			indent = node["level"] * "  "
-			data = node["data"]
-			sys.stdout.write(f'{indent}{start}{data}{end}')
+		for entry in walk_tree_depth_first(parse_tree):
+			end = "\n" if entry["is_end"] else ""
+			start = "\t" if entry["is_meta"] else ""
+			indent = entry["level"] * "    "
+			node = entry["node"]
+			if isinstance(node, Tree):
+				data = node.data
+				sys.stdout.write(f'{indent}{start}{data}{end}')
+			elif isinstance(node, Token):
+				name = node.type
+				value = node.value
+				sys.stdout.write(f'{indent}{start}{name}:{value}{end}')
+			else:
+				print("Unexpected node type: {0}".format(type(node)))
 
 		'''
 		for x in parse_tree.iter_subtrees():#iter_subtrees_topdown():
