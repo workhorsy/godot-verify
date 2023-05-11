@@ -70,21 +70,32 @@ class SceneFile(object):
 						self._resources.append(resource)
 
 
-def walk_tree(self, level, indent_str):
+def walk_tree_new(node, level):
 	from lark import Tree
-	yield f'{indent_str*level}{self.data}#0'
-	if len(self.children) == 1 and not isinstance(self.children[0], Tree):
-		yield f'\t{self.children[0]}#1\n'
-	else:
-		yield '#2\n'
-		for n in self.children:
-			if isinstance(n, Tree):
-				yield from walk_tree(n, level+1, indent_str)
-			else:
-				yield f'{indent_str*(level+1)}{n}#3\n'
+
+	is_last = len(node.children) == 1 and not isinstance(node.children[0], Tree)
+	#tail = "\n" if not is_last else ""
+	#print([node.data, is_last, tail])
+	yield {'level' : level, 'data' : node.data, 'is_last' : not is_last}
+
+	is_last = len(node.children) == 1 and not isinstance(node.children[0], Tree)
+	#tail = "\n" if is_last else ""
+	if is_last:
+		yield {'level' : 0, 'data' : '\t' + node.children[0], 'is_last' : is_last}
+		return
+
+	for n in node.children:
+		if isinstance(n, Tree):
+			yield from walk_tree_new(n, level+1)
+		else:
+			is_last = True
+			#tail = "\n" if is_last else ""
+			yield {'level' : (level+1), 'data' : n, 'is_last' : is_last}
 
 class GDScriptFile(object):
 	def __init__(self, file_name, leaf_visitor_cb):
+		import sys
+
 		self._path = file_name
 		self._classes = []
 		self._functions = []
@@ -94,9 +105,15 @@ class GDScriptFile(object):
 
 		print("*" * 80)
 		parse_tree = parser.parse(code, gather_metadata=True)
-		#print('#'.join(walk_tree(parse_tree, 0, '  ')))
-		for n in walk_tree(parse_tree, 0, '  '):
-			print(n)
+		#print(parse_tree.pretty())
+
+		for node in walk_tree_new(parse_tree, 0):
+			is_last = node["is_last"]
+			tail = "\n" if is_last else ""
+			indent = node["level"] * "  "
+			data = node["data"]
+			sys.stdout.write(f'{indent}{data}{tail}')
+
 		'''
 		for x in parse_tree.iter_subtrees():#iter_subtrees_topdown():
 			print("!!!!: ", x)
