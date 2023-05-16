@@ -78,7 +78,7 @@ def walk_tree_depth_first(node, level = 0):
 
 	is_end = len(node.children) == 1 and not isinstance(node.children[0], Tree)
 	if is_end:
-		yield {'level' : 0, 'node' : node.children[0], 'is_meta' : True, 'is_end' : is_end}
+		yield {'level' : level, 'node' : node.children[0], 'is_meta' : True, 'is_end' : is_end}
 		return
 
 	for child in node.children:
@@ -87,6 +87,25 @@ def walk_tree_depth_first(node, level = 0):
 		else:
 			is_end = True
 			yield {'level' : (level+1), 'node' : child, 'is_meta' : False, 'is_end' : is_end}
+
+class GDSFunction(object):
+	def __init__(self):
+		self._name = None
+		self._type = None
+
+class TreeWalkingVisitor(object):
+	def __init__(self):
+		self._current_func = None
+
+	def visit_tree(self, node, level, is_end, is_meta, is_leaf):
+		import sys
+		match node.data:
+			case 'func_def':
+				self._current_func = GDSFunction()
+
+	def visit_token(self, node, level, is_end, is_meta, is_leaf):
+		import sys
+
 
 class GDScriptFile(object):
 	def __init__(self, file_name, leaf_visitor_cb):
@@ -105,20 +124,17 @@ class GDScriptFile(object):
 		parse_tree = parser.parse(code, gather_metadata=True)
 		#print(parse_tree.pretty())
 
-		for entry in walk_tree_depth_first(parse_tree):
-			end = "\n" if entry["is_end"] else ""
-			start = "\t" if entry["is_meta"] else ""
-			indent = entry["level"] * "    "
-			node = entry["node"]
-			if isinstance(node, Tree):
-				data = node.data
-				sys.stdout.write(f'{indent}{start}{data}{end}')
-			elif isinstance(node, Token):
-				name = node.type
-				value = node.value
-				sys.stdout.write(f'{indent}{start}{name}:{value}{end}')
-			else:
-				print("Unexpected node type: {0}".format(type(node)))
+		visitor = TreeWalkingVisitor()
+
+		entry = None
+		prev_entry = None
+		for next_entry in walk_tree_depth_first(parse_tree):
+			if entry != None:
+				self._walk_next(visitor, prev_entry, entry, next_entry)
+
+			prev_entry = entry
+			entry = next_entry
+		self._walk_next(visitor, prev_entry, entry, None)
 
 		'''
 		for x in parse_tree.iter_subtrees():#iter_subtrees_topdown():
@@ -181,3 +197,29 @@ class GDScriptFile(object):
 				#print(f.name)
 				self._functions.append(f.name)
 		'''
+	def _walk_next(self, visitor, prev_entry, entry, next_entry):
+		import sys
+		from lark import Tree
+		from lark.lexer import Token
+
+		end = "\n" if entry["is_end"] else ""
+		start = "\t" if entry["is_meta"] else ""
+		indent = entry["level"] * "    " if not entry["is_meta"] else ""
+		node = entry["node"]
+		is_leaf = True
+		if next_entry:
+			is_leaf = next_entry["level"] <= entry["level"] and entry["is_end"]
+		#if is_leaf:
+		#	end = "<<<leaf>>>" + end
+
+		if isinstance(node, Tree):
+			data = node.data
+			sys.stdout.write(f'{indent}{start}{data}{end}')
+			visitor.visit_tree(node, entry["level"], entry["is_end"], entry["is_meta"], is_leaf)
+		elif isinstance(node, Token):
+			name = node.type
+			value = node.value
+			sys.stdout.write(f'{indent}{start}{name}:{value}{end}')
+			visitor.visit_token(node, entry["level"], entry["is_end"], entry["is_meta"], is_leaf)
+		else:
+			print("Unexpected node type: {0}".format(type(node)))
